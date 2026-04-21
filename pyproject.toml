@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "kuboc-core"
+version = "0.1.0"
+description = "Librería compartida de la suite KUBOC: auth SSO, proyectos multi-tenant, permisos"
+authors = [{name = "PREYDAT"}]
+requires-python = ">=3.11"
+dependencies = [
+    "psycopg[binary]>=3.2.0",
+    "itsdangerous>=2.2.0",
+    "python-dotenv>=1.0.0",
+]
+
+[tool.setuptools.packages.find]
+include = ["kuboc_core*"]
