@@ -36,10 +36,14 @@ def _init_pool():
             conninfo=config.DATABASE_URL,
             min_size=1,
             max_size=5,
+            timeout=10,                 # acquire desde el pool: máx 10s (era 30s default)
+            max_idle=300,                # recicla conns tras 5 min idle
+            max_lifetime=3600,           # recicla conns tras 1h (evita stale Railway Postgres)
+            check=ConnectionPool.check_connection,  # health-check antes de entregar
             kwargs={'row_factory': dict_row},
         )
         _pool.open(wait=True, timeout=10)
-        logger.info("kuboc_core: pool Postgres listo (min=1, max=5)")
+        logger.info("kuboc_core: pool Postgres listo (min=1, max=5, check=on)")
     except ImportError:
         _pool = None
         logger.warning("kuboc_core: psycopg_pool no disponible, usando conexiones directas")
