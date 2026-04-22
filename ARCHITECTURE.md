@@ -45,6 +45,34 @@ KUBOC Suite = **5 repos independientes** que comparten identidad y proyectos ví
 | `KUBOC-LOGISTICA` | Almacenes, kardex, órdenes de compra | Railway proyecto **SISTEMA LOGISTICO KUBOC ALM** | SQLite local + sync al core |
 | `KUBOC-RRHH` (futuro) | Planillas, contratos, asistencia | nuevo deploy | nuevo SQLite + sync |
 
+## 🚨 TAREAS PENDIENTES (priority backlog)
+
+### [D] Telegram bot multi-proyecto — DIFERIDO
+Cuando Tingo Alto empiece a subir data real:
+1. En BotFather crear `@BotFacturasTingoAlto` con nuevo token
+2. En Railway (proyecto SERVER BOT FACTURAS PRINCIPAL) crear nuevo servicio apuntando al MISMO repo `Bot-Facturas-Log1`
+3. Env vars del nuevo servicio:
+   - `TELEGRAM_TOKEN=<token-del-nuevo-bot>`
+   - `BONANZA_PROYECTO_ID=2`  (Tingo Alto)
+   - `DATA_DIR=/data` + volumen Railway NUEVO e independiente
+   - `CORE_DATABASE_URL` y `KUBOC_CORE_SECRET` iguales al de Bonanza
+4. Agregar el nuevo bot al grupo Telegram de Tingo Alto
+5. Cero clonado de repo — mismo código, distintos deploys = cero divergencia
+
+**Por qué no clonar el repo**: cualquier fix al código tendría que portarse manualmente a ambos repos → bugs asimétricos. Con un solo repo y dos deploys, `git push` actualiza ambos automáticamente.
+
+### Matriz de permisos 3D (Usuario × Proyecto × Sistema) — EN CURSO
+La tabla `usuario_proyecto_rol` ya tiene columna `sistemas TEXT[]`:
+- `NULL` = acceso a todos los sistemas del proyecto
+- `['facturas','rrhh']` = solo esos sistemas
+
+Cada rol define el nivel de acción permitido:
+- **admin**: todo incluido crear/borrar usuarios, config sistema
+- **supervisor**: crear/editar/eliminar registros propios y ajenos, exportar; NO crea usuarios
+- **contador**: crear/editar documentos contables, exportar, ver todo; NO elimina, NO crea usuarios
+- **operador**: crear/editar registros propios, exportar; NO elimina, NO edita ajenos
+- **visor**: solo ver y exportar; NO modifica nada
+
 ## Base de datos
 
 ### Postgres central (kuboc-core)
