@@ -61,7 +61,32 @@ Cuando Tingo Alto empiece a subir data real:
 
 **Por qué no clonar el repo**: cualquier fix al código tendría que portarse manualmente a ambos repos → bugs asimétricos. Con un solo repo y dos deploys, `git push` actualiza ambos automáticamente.
 
-### Matriz de permisos 3D (Usuario × Proyecto × Sistema) — EN CURSO
+### Estrategia multi-tenant por proyecto — DOS ETAPAS
+
+**Etapa actual (MVP — segmentación por volumen)**:
+
+Cuando un nuevo proyecto (ej. Tingo Alto) empiece a operar, **NO se modifica el código**. En cambio:
+
+1. Se crea un **nuevo servicio Railway** apuntando al mismo repo del sistema (Log/Ops/Facturas).
+2. Cada servicio tiene su **volumen SQLite propio** (data aislada por contrato físico).
+3. Se setean env vars distintas:
+   - `BONANZA_PROYECTO_ID=1` (Bonanza) o `=2` (Tingo Alto)
+   - `DATA_DIR=/data` + volumen nuevo por servicio
+4. El mismo repo = cero divergencia de código entre proyectos.
+
+Resultado: zero-cross-risk absoluto. Un bug en Log-Bonanza no contamina Log-Tingo. Una exportación de Bonanza NO puede accidentalmente traer datos de Tingo.
+
+**Etapa futura (multi-tenant real en el código)**:
+
+Las tablas operativas de los 3 sistemas YA tienen `proyecto_id INTEGER NOT NULL DEFAULT 1` agregado como columna (migraciones Fase 3.C, 4, 5). Cuando se necesite tener múltiples proyectos en el MISMO deploy:
+
+1. Cambiar todos los INSERTs para usar `proyecto_id = request.state.proyecto_activo`
+2. Cambiar todos los SELECTs para filtrar `WHERE proyecto_id = ?`
+3. Esto permite un dashboard consolidado en el hub con datos de N proyectos
+
+Por ahora no es necesario — segmentación por volumen cubre el caso principal y es más seguro.
+
+### Matriz de permisos 3D (Usuario × Proyecto × Sistema) — IMPLEMENTADA
 La tabla `usuario_proyecto_rol` ya tiene columna `sistemas TEXT[]`:
 - `NULL` = acceso a todos los sistemas del proyecto
 - `['facturas','rrhh']` = solo esos sistemas
