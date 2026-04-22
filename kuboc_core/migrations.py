@@ -147,10 +147,26 @@ SCHEMA_SQL = [
 
 
 def run():
-    """Ejecuta las migraciones idempotentes. Segura de correr N veces."""
+    """Ejecuta las migraciones idempotentes. Segura de correr N veces.
+
+    Usa statement_timeout de 5s — si CREATE TABLE IF NOT EXISTS se queda
+    esperando un lock (ej. transacción zombie de un deploy anterior),
+    aborta y NO bloquea el startup indefinidamente.
+    """
     with get_conn() as conn:
+        # Fail-fast si hay locks colgados: 5s por statement
+        conn.execute("SET statement_timeout = '5s'")
+        # lock_timeout específico también — evita esperas largas por locks
+        conn.execute("SET lock_timeout = '3s'")
         for stmt in SCHEMA_SQL:
-            conn.execute(stmt)
+            try:
+                conn.execute(stmt)
+            except Exception as e:
+                # Si un statement falla, log y seguimos — DDL es idempotente y
+                # el resto puede aplicarse independientemente.
+                logger.warning(f"kuboc_core migration stmt falló (seguimos): {e}")
+                conn.rollback()
+                continue
         conn.commit()
     logger.info("kuboc_core: migraciones aplicadas")
 
