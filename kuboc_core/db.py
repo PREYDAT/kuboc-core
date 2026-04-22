@@ -18,13 +18,17 @@ from kuboc_core import config
 logger = logging.getLogger(__name__)
 
 _pool = None
+_pool_init_attempted = False  # evita re-logs de warning en cada request
 
 
 def _init_pool():
-    """Inicializa el pool de conexiones (lazy)."""
-    global _pool
+    """Inicializa el pool de conexiones (lazy). Idempotente y cache de fallo."""
+    global _pool, _pool_init_attempted
     if _pool is not None:
         return _pool
+    if _pool_init_attempted:
+        return None  # ya intentado y falló — usar fallback directo sin log
+    _pool_init_attempted = True
     config.validar()
     try:
         from psycopg_pool import ConnectionPool
@@ -35,11 +39,13 @@ def _init_pool():
             kwargs={'row_factory': dict_row},
         )
         _pool.open(wait=True, timeout=10)
-        logger.info("kuboc_core: pool Postgres listo")
+        logger.info("kuboc_core: pool Postgres listo (min=1, max=5)")
     except ImportError:
-        # Fallback sin pool si no está psycopg-pool
         _pool = None
         logger.warning("kuboc_core: psycopg_pool no disponible, usando conexiones directas")
+    except Exception as e:
+        _pool = None
+        logger.warning(f"kuboc_core: pool no se pudo abrir ({e}), usando conexiones directas")
     return _pool
 
 
