@@ -22,5 +22,5 @@ Uso típico desde un sistema consumidor (Facturas, Ops, Logística, RRHH):
 """
 from kuboc_core import auth, projects, templates, db, migrations
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 __all__ = ["auth", "projects", "templates", "db", "migrations"]

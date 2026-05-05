@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "kuboc-core"
-version = "0.1.0"
+version = "0.2.0"
 description = "Librería compartida de la suite KUBOC: auth SSO, proyectos multi-tenant, permisos"
 authors = [{name = "PREYDAT"}]
 requires-python = ">=3.11"
@@ -15,5 +15,15 @@ dependencies = [
     "python-dotenv>=1.0.0",
 ]
 
+[project.optional-dependencies]
+test = ["pytest>=7.0"]
+
 [tool.setuptools.packages.find]
 include = ["kuboc_core*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+markers = [
+    "integration: tests que requieren Postgres real (DATABASE_URL_TEST)",
+]
